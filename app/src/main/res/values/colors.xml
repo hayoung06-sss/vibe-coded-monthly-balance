@@ -1,0 +1,4 @@
+<resources>
+    <!-- Compose 다크 테마의 background와 같은 값이어야 첫 프레임 전후 색이 바뀌지 않는다 -->
+    <color name="window_background_dark">#FF121212</color>
+</resources>

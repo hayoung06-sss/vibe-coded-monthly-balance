@@ -1,0 +1,10 @@
+<resources>
+    <!-- 앱 프로세스가 뜨는 순간 시스템이 그리는 창 배경. 흰 깜빡임을 막기 위해 어둡게 둔다. -->
+    <style name="Theme.MonthlyBalance" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/window_background_dark</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>
