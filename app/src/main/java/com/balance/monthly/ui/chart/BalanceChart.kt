@@ -33,7 +33,7 @@ import java.time.LocalDate
 /**
  * 한 기간의 그래프 데이터.
  * balances는 첫날부터 오늘(지난 기간이면 마지막 날)까지의 일별 잔고이고, 나머지 날은 여백으로 남는다.
- * todayIndex가 null이면 지난 기간이다.
+ * firstIndex 앞은 첫 기록 이전이라 그리지 않는다. todayIndex가 null이면 지난 기간이다.
  */
 @Immutable
 class BalanceChartData(
@@ -42,7 +42,11 @@ class BalanceChartData(
     val balances: LongArray,
     val markers: IntArray,
     val todayIndex: Int?,
-)
+    val firstIndex: Int = 0,
+) {
+    /** 실제로 선을 그리는 날들. */
+    val drawnIndices: IntRange get() = firstIndex until balances.size
+}
 
 @Composable
 fun BalanceChart(data: BalanceChartData, modifier: Modifier = Modifier) {
@@ -70,7 +74,7 @@ fun BalanceChart(data: BalanceChartData, modifier: Modifier = Modifier) {
                     detectTapGestures { position ->
                         val inset = HorizontalInset.toPx()
                         val index = dayIndexAt(position.x, inset, size.width - inset, data.dayCount)
-                        selected = if (index in data.balances.indices && index != selected) index else null
+                        selected = if (index in data.drawnIndices && index != selected) index else null
                     }
                 },
         ) {
@@ -90,7 +94,8 @@ private fun DrawScope.drawChart(data: BalanceChartData, selected: Int?, colors: 
     val top = VerticalInset.toPx()
     val bottom = size.height - top
     val step = if (data.dayCount > 1) (right - left) / (data.dayCount - 1) else 0f
-    val range = chartRange(data.balances)
+    val drawn = data.drawnIndices
+    val range = chartRange(data.balances.copyOfRange(drawn.first, drawn.last + 1))
 
     fun x(index: Int) = left + step * index
     fun y(value: Long): Float {
@@ -110,12 +115,15 @@ private fun DrawScope.drawChart(data: BalanceChartData, selected: Int?, colors: 
     }
 
     val balances = data.balances
-    if (balances.size >= 2) {
+    if (drawn.count() >= 2) {
         val path = Path().apply {
-            moveTo(x(0), y(balances[0]))
-            for (i in 1 until balances.size) lineTo(x(i), y(balances[i]))
+            moveTo(x(drawn.first), y(balances[drawn.first]))
+            for (i in drawn.first + 1..drawn.last) lineTo(x(i), y(balances[i]))
         }
         drawPath(path, colors.line, style = Stroke(2.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+    } else if (drawn.count() == 1 && data.todayIndex == null) {
+        // 지난 기간의 마지막 날에만 기록이 있으면 점 하나로 보여준다
+        drawCircle(colors.line, 3.dp.toPx(), Offset(x(drawn.first), y(balances[drawn.first])))
     }
 
     for (marker in data.markers) {
@@ -124,7 +132,7 @@ private fun DrawScope.drawChart(data: BalanceChartData, selected: Int?, colors: 
         drawCircle(colors.line, 3.dp.toPx(), center)
     }
 
-    if (data.todayIndex != null && balances.isNotEmpty()) {
+    if (data.todayIndex != null && !drawn.isEmpty()) {
         val center = Offset(x(balances.lastIndex), y(balances.last()))
         drawCircle(colors.line.copy(alpha = 0.25f), 10.dp.toPx(), center)
         drawCircle(colors.line, 5.dp.toPx(), center)

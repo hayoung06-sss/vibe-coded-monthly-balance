@@ -59,6 +59,10 @@ fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int
         .toList()
         .toIntArray()
     val summary = periodSummary(timeline, period, today)
+    // 첫 기록 이전 날은 잔고가 0으로 계산되지만 그래프에서는 비워 둔다
+    val firstIndex = timeline.firstOrNull()
+        ?.let { (it.entry.date.toEpochDay() - period.start.toEpochDay()).toInt().coerceIn(0, balances.size) }
+        ?: balances.size
 
     return HomeUiState(
         period = period,
@@ -68,7 +72,7 @@ fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int
         canGoForward = !isCurrent,
         balance = if (isCurrent) balanceAt(timeline, today) else summary.endBalance,
         summary = summary,
-        chart = BalanceChartData(period.start, period.dayCount, balances, markers, todayIndex),
+        chart = BalanceChartData(period.start, period.dayCount, balances, markers, todayIndex, firstIndex),
         isEmpty = timeline.isEmpty(),
     )
 }

@@ -88,6 +88,34 @@ class HomeStateTest {
     }
 
     @Test
+    fun `첫 기록 이전 날은 그리지 않는다`() {
+        val timeline = Ledger().apply { balance("2026-10-12", 300_000) }.timeline()
+
+        val state = homeState(timeline, today, startDay = 1, offset = 0)
+
+        assertEquals(11, state.chart.firstIndex)
+        assertEquals(11..19, state.chart.drawnIndices)
+        assertEquals(0L, state.chart.balances[10])
+    }
+
+    @Test
+    fun `첫 기록이 이전 기간이면 기간 전체를 그린다`() {
+        val state = homeState(planExample().timeline(), day("2026-11-03"), startDay = 1, offset = 0)
+
+        assertEquals(0, state.chart.firstIndex)
+        assertEquals(0..2, state.chart.drawnIndices)
+    }
+
+    @Test
+    fun `첫 기록이 미래 날짜뿐이면 아무 선도 없다`() {
+        val timeline = Ledger().apply { balance("2026-10-25", 300_000) }.timeline()
+
+        val state = homeState(timeline, today, startDay = 1, offset = 0)
+
+        assertTrue(state.chart.drawnIndices.isEmpty())
+    }
+
+    @Test
     fun `달 시작일 25이면 날짜 범위 라벨`() {
         val state = homeState(planExample().timeline(), today, startDay = 25, offset = 0)
 
