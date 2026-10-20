@@ -84,7 +84,7 @@ fun AppRoot() {
                 onDelete = entryViewModel::delete,
                 modifier,
             )
-            Tab.SETTINGS -> SettingsScreen(modifier)
+            Tab.SETTINGS -> SettingsScreen(app.settings, modifier)
         }
     }
 

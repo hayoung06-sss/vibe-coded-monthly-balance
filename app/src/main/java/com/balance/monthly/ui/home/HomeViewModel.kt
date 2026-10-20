@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 class HomeViewModel(
@@ -27,8 +29,13 @@ class HomeViewModel(
 ) : ViewModel() {
 
     private val today = MutableStateFlow(clock())
-    private val startDay = MutableStateFlow(settings.monthStartDay)
+    private val startDay = settings.monthStartDayFlow
     private val offset = MutableStateFlow(0)
+
+    init {
+        // 달 시작일이 바뀌면 기간 경계가 달라지므로 이번 기간으로 돌아간다
+        viewModelScope.launch { startDay.drop(1).collect { offset.value = 0 } }
+    }
 
     // Room은 여기서 처음 열린다. 메인 스레드를 막지 않도록 Default에서 접근한다.
     private val timeline = flow { emitAll(repository().entries) }

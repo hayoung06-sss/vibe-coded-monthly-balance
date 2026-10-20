@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,8 +47,8 @@ import com.balance.monthly.domain.LedgerEntry
 import com.balance.monthly.ui.formatAmount
 import com.balance.monthly.ui.formatSigned
 import com.balance.monthly.ui.formatWon
-import com.balance.monthly.ui.theme.ExpenseRed
 import com.balance.monthly.ui.theme.TabularNumbers
+import kotlinx.coroutines.launch
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -118,15 +119,15 @@ fun RecordsScreen(
 /** 왼쪽으로 밀면 삭제를 요청한다. 항목은 제자리로 돌아오고, 실제 삭제는 확인 후에 한다. */
 @Composable
 private fun SwipeToDelete(onSwiped: () -> Unit, content: @Composable () -> Unit) {
-    val state = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) onSwiped()
-            false
-        },
-    )
+    val state = rememberSwipeToDismissBoxState()
+    val scope = rememberCoroutineScope()
     SwipeToDismissBox(
         state = state,
         enableDismissFromStartToEnd = false,
+        onDismiss = { value ->
+            if (value == SwipeToDismissBoxValue.EndToStart) onSwiped()
+            scope.launch { state.reset() }
+        },
         backgroundContent = {
             Box(
                 Modifier.fillMaxSize().background(MaterialTheme.colorScheme.errorContainer).padding(horizontal = 24.dp),
@@ -145,7 +146,7 @@ private fun RecordRow(item: EntryWithBalance, onClick: () -> Unit) {
     val entry = item.entry
     val (symbol, color, label) = when (entry.type) {
         EntryType.INCOME -> Triple("+", MaterialTheme.colorScheme.primary, "수입")
-        EntryType.EXPENSE -> Triple("−", ExpenseRed, "지출")
+        EntryType.EXPENSE -> Triple("−", MaterialTheme.colorScheme.error, "지출")
         EntryType.BALANCE -> Triple("=", MaterialTheme.colorScheme.onSurfaceVariant, "실제 잔고")
     }
     val amountText = when (entry.type) {

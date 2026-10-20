@@ -1,0 +1,3 @@
+<resources>
+    <style name="Theme.MonthlyBalance.System" parent="Theme.MonthlyBalance" />
+</resources>

@@ -7,4 +7,16 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowLightNavigationBar">false</item>
     </style>
+
+    <!-- 라이트 테마를 고른 사용자용. MainActivity가 setTheme으로, Android 13+에서는 스플래시에도 적용한다. -->
+    <style name="Theme.MonthlyBalance.Light" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background_light</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+    </style>
+
+    <!-- 시스템 설정을 따르는 사용자용. values-night에 다크 버전이 있다. -->
+    <style name="Theme.MonthlyBalance.System" parent="Theme.MonthlyBalance.Light" />
 </resources>

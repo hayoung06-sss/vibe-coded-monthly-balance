@@ -51,6 +51,28 @@ class SettingsTest {
     }
 
     @Test
+    fun 바꾼_값은_바로_관찰된다() {
+        settings.monthStartDay = 25
+        settings.theme = ThemeMode.LIGHT
+        settings.showForecast = false
+
+        assertEquals(25, settings.monthStartDayFlow.value)
+        assertEquals(ThemeMode.LIGHT, settings.themeFlow.value)
+        assertFalse(settings.showForecastFlow.value)
+    }
+
+    @Test
+    fun 새_인스턴스도_저장된_값을_읽는다() {
+        settings.monthStartDay = 10
+        settings.theme = ThemeMode.SYSTEM
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val reloaded = Settings(context.getSharedPreferences("settings-test", Context.MODE_PRIVATE))
+
+        assertEquals(10, reloaded.monthStartDay)
+        assertEquals(ThemeMode.SYSTEM, reloaded.theme)
+    }
+
+    @Test
     fun dataVersion은_1씩_증가한다() {
         assertEquals(1L, settings.incrementDataVersion())
         assertEquals(2L, settings.incrementDataVersion())
