@@ -91,9 +91,12 @@ private fun HomeContent(
             Spacer(Modifier.height(20.dp))
             state.summary?.let { SummaryRow(it) }
         }
-        Spacer(Modifier.height(16.dp))
+        // + 버튼이 요약을 가리지 않도록 그 높이만큼 비운다
+        Spacer(Modifier.height(FabClearance))
     }
 }
+
+private val FabClearance = 88.dp
 
 @Composable
 private fun AxisLabel(text: String) {

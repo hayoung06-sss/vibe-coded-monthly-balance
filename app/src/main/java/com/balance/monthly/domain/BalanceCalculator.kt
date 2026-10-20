@@ -53,6 +53,24 @@ fun computeTimeline(entries: List<LedgerEntry>): List<EntryWithBalance> {
     }
 }
 
+/** 기록이 들어갈 자리 직전의 계산 잔고와, 그 앞에 실제 잔고 기록이 있는지. */
+data class PriorBalance(val balance: Long, val hasCheckpoint: Boolean)
+
+/**
+ * [date]에 기록을 넣을 때 그 직전의 계산 잔고. 실제 잔고 입력의 힌트와 예상 차액에 쓴다.
+ * 새 기록은 같은 날짜의 기존 기록 뒤에 놓이고, 수정 중인 기록([editing])은 제외한 채 원래 생성 순서 자리에 놓인다.
+ */
+fun priorBalance(entries: List<LedgerEntry>, date: LocalDate, editing: LedgerEntry? = null): PriorBalance {
+    val others = if (editing == null) entries else entries.filter { it.id != editing.id }
+    val position = editing?.copy(date = date)
+        ?: LedgerEntry(Long.MAX_VALUE, EntryType.BALANCE, 0, date, createdAt = Long.MAX_VALUE)
+    val before = computeTimeline(others).filter { timelineOrder.compare(it.entry, position) < 0 }
+    return PriorBalance(
+        balance = before.lastOrNull()?.balance ?: 0L,
+        hasCheckpoint = before.any { it.entry.type == EntryType.BALANCE },
+    )
+}
+
 /** [date]가 끝났을 때의 잔고. 그 전에 기록이 없으면 0. */
 fun balanceAt(timeline: List<EntryWithBalance>, date: LocalDate): Long =
     timeline.lastOrNull { it.entry.date <= date }?.balance ?: 0L
