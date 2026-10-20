@@ -6,9 +6,8 @@ import com.balance.monthly.domain.Period
 import com.balance.monthly.domain.PeriodSummary
 import com.balance.monthly.domain.balanceAt
 import com.balance.monthly.domain.dailyBalances
-import com.balance.monthly.domain.periodOf
+import com.balance.monthly.domain.periodAt
 import com.balance.monthly.domain.periodSummary
-import com.balance.monthly.domain.previous
 import com.balance.monthly.ui.chart.BalanceChartData
 import com.balance.monthly.ui.periodLabel
 import java.time.LocalDate
@@ -31,8 +30,7 @@ data class HomeUiState(
  * [offset]은 이번 기간을 0으로 한 기간 이동 수(0 이하).
  */
 fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int, offset: Int): HomeUiState {
-    var period = periodOf(today, startDay)
-    repeat(-offset) { period = period.previous(startDay) }
+    val period = periodAt(today, startDay, offset)
     val isCurrent = offset == 0
     val todayIndex = if (isCurrent) (today.toEpochDay() - period.start.toEpochDay()).toInt() else null
 

@@ -30,6 +30,7 @@ import com.balance.monthly.ui.entry.EntryViewModel
 import com.balance.monthly.ui.home.HomeScreen
 import com.balance.monthly.ui.home.HomeViewModel
 import com.balance.monthly.ui.records.RecordsScreen
+import com.balance.monthly.ui.records.RecordsViewModel
 import com.balance.monthly.ui.settings.SettingsScreen
 
 private enum class Tab(val label: String, @DrawableRes val icon: Int) {
@@ -43,6 +44,7 @@ private enum class Tab(val label: String, @DrawableRes val icon: Int) {
 fun AppRoot() {
     val app = LocalContext.current.applicationContext as BalanceApp
     val homeViewModel = viewModel { HomeViewModel({ app.repository }, app.settings) }
+    val recordsViewModel = viewModel { RecordsViewModel({ app.repository }, app.settings) }
     val entryViewModel = viewModel { EntryViewModel { app.repository } }
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
     var sheet by remember { mutableStateOf<EntrySheetRequest?>(null) }
@@ -76,7 +78,12 @@ fun AppRoot() {
                 onAddBalance = { sheet = EntrySheetRequest.New(EntryType.BALANCE) },
                 modifier,
             )
-            Tab.RECORDS -> RecordsScreen(modifier)
+            Tab.RECORDS -> RecordsScreen(
+                recordsViewModel,
+                onEdit = { sheet = EntrySheetRequest.Edit(it) },
+                onDelete = entryViewModel::delete,
+                modifier,
+            )
             Tab.SETTINGS -> SettingsScreen(modifier)
         }
     }

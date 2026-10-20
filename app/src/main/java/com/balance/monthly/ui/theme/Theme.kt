@@ -9,6 +9,7 @@ import androidx.compose.ui.text.TextStyle
 // res/values/colors.xml의 window_background_dark와 같은 값
 val WindowBackgroundDark = Color(0xFF121212)
 val Mint = Color(0xFF4FD1A5)
+val ExpenseRed = Color(0xFFFF8A80)
 
 private val DarkColors = darkColorScheme(
     primary = Mint,

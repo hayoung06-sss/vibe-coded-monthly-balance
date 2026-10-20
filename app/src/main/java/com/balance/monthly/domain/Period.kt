@@ -21,6 +21,14 @@ fun periodOf(date: LocalDate, startDay: Int): Period {
     )
 }
 
+/** 오늘이 속한 기간에서 [offset]만큼 옮긴 기간. 음수는 과거, 양수는 미래. */
+fun periodAt(today: LocalDate, startDay: Int, offset: Int): Period {
+    var period = periodOf(today, startDay)
+    repeat(-offset) { period = period.previous(startDay) }
+    repeat(offset) { period = period.next(startDay) }
+    return period
+}
+
 fun Period.previous(startDay: Int): Period = periodOf(start.minusDays(1), startDay)
 
 fun Period.next(startDay: Int): Period = periodOf(end.plusDays(1), startDay)
