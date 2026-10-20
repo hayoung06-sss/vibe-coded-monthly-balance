@@ -13,3 +13,19 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 .\gradlew.bat assembleDebug
 .\gradlew.bat testDebugUnitTest
 ```
+
+디버그 빌드에서 샘플 기록을 넣으려면 `adb shell am start -n com.balance.monthly/.debug.SeedSampleActivity`를 실행한다(기존 기록은 지워진다. `--ez clear true`를 붙이면 지우기만 한다).
+
+## 시작 속도
+
+- Baseline Profile·Startup Profile 다시 만들기: `.\gradlew.bat :app:generateBaselineProfile` (연결된 기기 필요, 기기의 기록이 샘플로 바뀐다)
+- 콜드 스타트 측정: `.\gradlew.bat :benchmark:connectedBenchmarkReleaseAndroidTest`
+
+### 측정 기록
+
+| 날짜 | 기기 | 빌드 | 모드 | TTID 중앙값 (최소~최대) | TTFD 중앙값 |
+| --- | --- | --- | --- | --- | --- |
+| 2026-10-20 | 에뮬레이터 Medium Phone API 36.1 (x86_64) | benchmarkRelease (R8) | 프로파일 없음 | 989.8ms (910.3~1,157.8) | 1,097.8ms |
+| 2026-10-20 | 에뮬레이터 Medium Phone API 36.1 (x86_64) | benchmarkRelease (R8) | Baseline Profile | 904.1ms (778.2~2,402.7) | 1,068.6ms |
+
+콜드 스타트 10회, 샘플 기록 약 120건. 에뮬레이터 수치라 절대값은 실기기와 다르다. 목표(중급 실기기 TTID 500ms 이하)는 실기기에서 다시 잰다.

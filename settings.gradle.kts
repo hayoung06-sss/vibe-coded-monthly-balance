@@ -21,3 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "MonthlyBalance"
 include(":app")
+include(":baselineprofile")
+include(":benchmark")

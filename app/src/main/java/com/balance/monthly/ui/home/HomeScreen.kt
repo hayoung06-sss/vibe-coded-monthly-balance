@@ -1,5 +1,6 @@
 package com.balance.monthly.ui.home
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,9 @@ import com.balance.monthly.ui.theme.TabularNumbers
 @Composable
 fun HomeScreen(viewModel: HomeViewModel, onAddBalance: () -> Unit, modifier: Modifier = Modifier) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val loaded by viewModel.isLoaded.collectAsStateWithLifecycle()
+    // 실제 데이터로 그려지면 reportFullyDrawn (TTFD)
+    ReportDrawnWhen { loaded }
     LifecycleResumeEffect(viewModel) {
         viewModel.refreshToday()
         onPauseOrDispose { }

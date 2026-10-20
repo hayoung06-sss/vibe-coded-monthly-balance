@@ -116,6 +116,42 @@ class HomeStateTest {
     }
 
     @Test
+    fun `스냅샷으로 만든 첫 화면은 실제 데이터로 그린 화면과 같다`() {
+        val fresh = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+        val snapshot = fresh.toSnapshot(dataVersion = 5, today, startDay = 1)!!
+
+        val restored = snapshot.toUiState(today, startDay = 1)!!
+
+        assertEquals(fresh.balance, restored.balance)
+        assertEquals(fresh.summary, restored.summary)
+        assertEquals(fresh.periodLabel, restored.periodLabel)
+        assertArrayEquals(fresh.chart.balances, restored.chart.balances)
+        assertArrayEquals(fresh.chart.markers, restored.chart.markers)
+        assertEquals(fresh.chart.todayIndex, restored.chart.todayIndex)
+        assertEquals(fresh.chart.firstIndex, restored.chart.firstIndex)
+    }
+
+    @Test
+    fun `스냅샷의 기간이나 시작일이 다르면 쓰지 않는다`() {
+        val snapshot = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+            .toSnapshot(dataVersion = 5, today, startDay = 1)!!
+
+        assertNull(snapshot.toUiState(day("2026-11-01"), startDay = 1))
+        assertNull(snapshot.toUiState(today, startDay = 25))
+        // 같은 기간의 다음 날은 그대로 쓴다
+        assertEquals(20, snapshot.toUiState(day("2026-10-21"), startDay = 1)!!.chart.todayIndex)
+    }
+
+    @Test
+    fun `지난 기간과 빈 상태는 스냅샷으로 저장하지 않는다`() {
+        val past = homeState(planExample().timeline(), today, startDay = 1, offset = -1)
+        val empty = homeState(emptyList(), today, startDay = 1, offset = 0)
+
+        assertNull(past.toSnapshot(1, today, 1))
+        assertNull(empty.toSnapshot(1, today, 1))
+    }
+
+    @Test
     fun `달 시작일 25이면 날짜 범위 라벨`() {
         val state = homeState(planExample().timeline(), today, startDay = 25, offset = 0)
 

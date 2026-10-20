@@ -1,5 +1,6 @@
 package com.balance.monthly.ui.home
 
+import com.balance.monthly.data.HomeSnapshot
 import com.balance.monthly.domain.EntryType
 import com.balance.monthly.domain.EntryWithBalance
 import com.balance.monthly.domain.Period
@@ -72,5 +73,41 @@ fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int
         summary = summary,
         chart = BalanceChartData(period.start, period.dayCount, balances, markers, todayIndex, firstIndex),
         isEmpty = timeline.isEmpty(),
+    )
+}
+
+/** 이번 기간을 실제 데이터로 계산한 상태를 스냅샷으로 만든다. 빈 상태나 지난 기간이면 null. */
+fun HomeUiState.toSnapshot(dataVersion: Long, today: LocalDate, startDay: Int): HomeSnapshot? {
+    if (!isCurrentPeriod || isEmpty || balance == null || summary == null) return null
+    return HomeSnapshot(
+        dataVersion = dataVersion,
+        writtenOn = today,
+        monthStartDay = startDay,
+        balance = balance,
+        period = period,
+        dailyBalances = chart.balances,
+        firstIndex = chart.firstIndex,
+        markers = chart.markers,
+        summary = summary,
+    )
+}
+
+/**
+ * 스냅샷으로 첫 프레임 상태를 만든다. 스냅샷의 기간이 오늘이 속한 기간과 다르면 null.
+ * 이전 기간으로 가는 버튼은 실제 데이터를 읽은 뒤에 켠다.
+ */
+fun HomeSnapshot.toUiState(today: LocalDate, startDay: Int): HomeUiState? {
+    if (monthStartDay != startDay || period != periodAt(today, startDay, 0)) return null
+    val todayIndex = (today.toEpochDay() - period.start.toEpochDay()).toInt()
+    return HomeUiState(
+        period = period,
+        periodLabel = periodLabel(period, startDay),
+        isCurrentPeriod = true,
+        canGoBack = false,
+        canGoForward = false,
+        balance = balance,
+        summary = summary,
+        chart = BalanceChartData(period.start, period.dayCount, dailyBalances, markers, todayIndex, firstIndex),
+        isEmpty = false,
     )
 }

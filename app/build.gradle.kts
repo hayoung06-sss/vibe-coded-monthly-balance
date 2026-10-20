@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
+    alias(libs.plugins.baselineprofile)
 }
 
 android {
@@ -33,6 +34,15 @@ android {
     buildFeatures {
         compose = true
     }
+    // 샘플 데이터 화면은 디버그와 측정용 빌드(Baseline Profile 생성, Macrobenchmark)에만 넣는다
+    sourceSets {
+        listOf("debug", "nonMinifiedRelease", "benchmarkRelease").forEach { name ->
+            maybeCreate(name).apply {
+                java.srcDir("src/sample/java")
+                manifest.srcFile("src/sample/AndroidManifest.xml")
+            }
+        }
+    }
 }
 
 ksp {
@@ -41,6 +51,11 @@ ksp {
 
 room {
     schemaDirectory("$projectDir/schemas")
+}
+
+baselineProfile {
+    // 시작 경로 클래스를 첫 dex에 모으는 Startup Profile도 함께 쓴다
+    dexLayoutOptimization = true
 }
 
 dependencies {
@@ -56,6 +71,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.profileinstaller)
+    baselineProfile(project(":baselineprofile"))
 
     testImplementation(libs.junit)
 

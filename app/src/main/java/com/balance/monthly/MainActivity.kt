@@ -20,10 +20,13 @@ import com.balance.monthly.ui.theme.windowTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val settings = (application as BalanceApp).settings
+        val app = application as BalanceApp
+        val settings = app.settings
         // 테마는 첫 프레임에 필요하므로 동기로 읽어 창 배경부터 맞춘다
         setTheme(settings.theme.windowTheme)
         super.onCreate(savedInstanceState)
+        // 1KB 미만이라 동기로 읽는다. Room은 홈이 그려진 뒤 백그라운드에서 연다.
+        val snapshot = app.snapshotStore.readHome()
         setContent {
             val themeMode by settings.themeFlow.collectAsStateWithLifecycle()
             val dark = themeMode.isDark()
@@ -42,7 +45,7 @@ class MainActivity : ComponentActivity() {
                         splashScreen.setSplashScreenTheme(themeMode.windowTheme)
                     }
                 }
-                AppRoot()
+                AppRoot(snapshot)
             }
         }
     }

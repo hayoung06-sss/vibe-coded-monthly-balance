@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.balance.monthly.BalanceApp
 import com.balance.monthly.R
+import com.balance.monthly.data.HomeSnapshot
 import com.balance.monthly.domain.EntryType
 import com.balance.monthly.ui.entry.EntrySheet
 import com.balance.monthly.ui.entry.EntrySheetRequest
@@ -41,9 +42,11 @@ private enum class Tab(val label: String, @DrawableRes val icon: Int) {
 
 /** 하단 3탭. Navigation 라이브러리 없이 상태 변수 하나로 전환한다. */
 @Composable
-fun AppRoot() {
+fun AppRoot(initialSnapshot: HomeSnapshot?) {
     val app = LocalContext.current.applicationContext as BalanceApp
-    val homeViewModel = viewModel { HomeViewModel({ app.repository }, app.settings) }
+    val homeViewModel = viewModel {
+        HomeViewModel({ app.repository }, app.settings, { app.snapshotStore }, initialSnapshot)
+    }
     val recordsViewModel = viewModel { RecordsViewModel({ app.repository }, app.settings) }
     val entryViewModel = viewModel { EntryViewModel { app.repository } }
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }

@@ -17,7 +17,7 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 /**
- * 디버그 빌드 전용. 기존 기록을 모두 지우고 최근 약 75일치 샘플 기록을 넣은 뒤 홈을 연다.
+ * 디버그·측정용 빌드 전용. 기존 기록을 모두 지우고 최근 약 75일치 샘플 기록을 넣은 뒤 홈을 연다.
  * `adb shell am start -n com.balance.monthly/.debug.SeedSampleActivity`
  * 기록만 지우려면 `--ez clear true`를 붙인다.
  */
