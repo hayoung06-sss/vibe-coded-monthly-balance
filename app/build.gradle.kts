@@ -38,7 +38,7 @@ android {
     sourceSets {
         listOf("debug", "nonMinifiedRelease", "benchmarkRelease").forEach { name ->
             maybeCreate(name).apply {
-                java.srcDir("src/sample/java")
+                kotlin.directories += "src/sample/java"
                 manifest.srcFile("src/sample/AndroidManifest.xml")
             }
         }

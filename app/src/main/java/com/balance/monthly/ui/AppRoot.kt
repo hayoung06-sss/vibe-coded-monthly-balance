@@ -45,7 +45,7 @@ private enum class Tab(val label: String, @DrawableRes val icon: Int) {
 fun AppRoot(initialSnapshot: HomeSnapshot?) {
     val app = LocalContext.current.applicationContext as BalanceApp
     val homeViewModel = viewModel {
-        HomeViewModel({ app.repository }, app.settings, { app.snapshotStore }, initialSnapshot)
+        HomeViewModel({ app.repository }, app.settings, { app.snapshotStore }, initialSnapshot, app.forecastManager)
     }
     val recordsViewModel = viewModel { RecordsViewModel({ app.repository }, app.settings) }
     val entryViewModel = viewModel { EntryViewModel { app.repository } }

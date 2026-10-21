@@ -42,6 +42,28 @@ class HomeSnapshot(
 }
 
 /**
+ * 계산해 둔 예측 잔고. [balances]의 0번이 [computedOn](오늘)이고 기간 마지막 날까지 이어진다.
+ * 키(dataVersion, computedOn, monthStartDay, algorithmVersion)가 현재 상태와 같을 때만 쓴다.
+ */
+class CachedForecast(
+    val dataVersion: Long,
+    val computedOn: LocalDate,
+    val monthStartDay: Int,
+    val algorithmVersion: Int,
+    val balances: LongArray,
+) {
+    override fun equals(other: Any?): Boolean = other is CachedForecast &&
+        dataVersion == other.dataVersion &&
+        computedOn == other.computedOn &&
+        monthStartDay == other.monthStartDay &&
+        algorithmVersion == other.algorithmVersion &&
+        balances.contentEquals(other.balances)
+
+    override fun hashCode(): Int =
+        arrayOf<Any>(dataVersion, computedOn, monthStartDay, algorithmVersion, balances.contentHashCode()).contentHashCode()
+}
+
+/**
  * filesDir의 캐시 파일 읽기·쓰기. DataOutputStream으로 직접 쓴 바이너리이고 맨 앞에 포맷 버전 바이트를 둔다.
  * 읽기가 실패하거나 버전이 다르면 파일을 지우고 없는 것으로 취급한다. 지워도 다시 만들어진다.
  */
@@ -97,6 +119,33 @@ class SnapshotStore(private val dir: File) {
         homeFile.delete()
     }
 
+    private val forecastFile get() = File(dir, FORECAST_FILE)
+
+    fun readForecast(): CachedForecast? = read(forecastFile) { input ->
+        if (input.readByte() != FORECAST_FORMAT) return@read null
+        CachedForecast(
+            dataVersion = input.readLong(),
+            computedOn = LocalDate.ofEpochDay(input.readLong()),
+            monthStartDay = input.readByte().toInt(),
+            algorithmVersion = input.readUnsignedShort(),
+            balances = LongArray(input.readUnsignedShort()) { input.readLong() },
+        )
+    }
+
+    fun writeForecast(forecast: CachedForecast) = write(forecastFile) { out ->
+        out.writeByte(FORECAST_FORMAT.toInt())
+        out.writeLong(forecast.dataVersion)
+        out.writeLong(forecast.computedOn.toEpochDay())
+        out.writeByte(forecast.monthStartDay)
+        out.writeShort(forecast.algorithmVersion)
+        out.writeShort(forecast.balances.size)
+        forecast.balances.forEach(out::writeLong)
+    }
+
+    fun clearForecast() {
+        forecastFile.delete()
+    }
+
     private fun <T> read(file: File, block: (DataInputStream) -> T?): T? {
         if (!file.exists()) return null
         val result = runCatching { DataInputStream(file.inputStream().buffered()).use(block) }.getOrNull()
@@ -116,6 +165,8 @@ class SnapshotStore(private val dir: File) {
 
     companion object {
         const val HOME_FILE = "home_snapshot.bin"
+        const val FORECAST_FILE = "forecast.bin"
         private const val HOME_FORMAT: Byte = 1
+        private const val FORECAST_FORMAT: Byte = 1
     }
 }

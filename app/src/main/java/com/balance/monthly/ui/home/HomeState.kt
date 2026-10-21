@@ -1,6 +1,8 @@
 package com.balance.monthly.ui.home
 
+import com.balance.monthly.data.CachedForecast
 import com.balance.monthly.data.HomeSnapshot
+import com.balance.monthly.data.matches
 import com.balance.monthly.domain.EntryType
 import com.balance.monthly.domain.EntryWithBalance
 import com.balance.monthly.domain.Period
@@ -110,4 +112,15 @@ fun HomeSnapshot.toUiState(today: LocalDate, startDay: Int): HomeUiState? {
         chart = BalanceChartData(period.start, period.dayCount, dailyBalances, markers, todayIndex, firstIndex),
         isEmpty = false,
     )
+}
+
+/**
+ * 이번 기간이고 캐시 키가 현재 상태와 맞을 때만 예측선을 붙인다. 맞지 않으면 이전 예측도 보여주지 않는다.
+ * 실제 잔고 선이 오늘까지 그려져 있을 때만 이어 그린다.
+ */
+fun HomeUiState.withForecast(forecast: CachedForecast?, dataVersion: Long, today: LocalDate, startDay: Int): HomeUiState {
+    val todayIndex = chart.todayIndex ?: return this
+    if (forecast == null || isEmpty || !forecast.matches(dataVersion, today, startDay)) return this
+    if (chart.balances.size != todayIndex + 1 || forecast.balances.size != chart.dayCount - todayIndex) return this
+    return copy(chart = chart.withForecast(forecast.balances))
 }

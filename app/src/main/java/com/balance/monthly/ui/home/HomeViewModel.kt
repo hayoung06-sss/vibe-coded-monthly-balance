@@ -3,6 +3,7 @@ package com.balance.monthly.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.balance.monthly.data.EntryRepository
+import com.balance.monthly.data.ForecastManager
 import com.balance.monthly.data.HomeSnapshot
 import com.balance.monthly.data.Settings
 import com.balance.monthly.data.SnapshotStore
@@ -34,6 +35,7 @@ class HomeViewModel(
     private val settings: Settings,
     private val snapshotStore: () -> SnapshotStore,
     private val initialSnapshot: HomeSnapshot?,
+    private val forecastManager: ForecastManager,
     private val clock: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
@@ -51,26 +53,39 @@ class HomeViewModel(
         viewModelScope.launch { startDay.drop(1).collect { offset.value = 0 } }
     }
 
+    /** 설정에서 켜져 있고 기록이 바뀌지 않았을 때만 예측을 넘긴다. 키의 나머지(날짜, 시작일)는 withForecast가 확인한다. */
+    private val visibleForecast = combine(
+        forecastManager.forecast,
+        settings.showForecastFlow,
+        settings.dataVersionFlow,
+    ) { forecast, show, dataVersion -> if (show && forecast?.dataVersion == dataVersion) forecast else null }
+
     // Room은 여기서 처음 열린다. 메인 스레드를 막지 않도록 Default에서 접근한다.
     private val timeline = flow { emitAll(repository().entries) }
         .map<_, List<EntryWithBalance>?> { computeTimeline(it) }
         .onStart { emit(null) }
 
-    val uiState: StateFlow<HomeUiState> = combine(timeline, today, startDay, offset) { timeline, today, startDay, offset ->
-        if (timeline == null) {
+    val uiState: StateFlow<HomeUiState> = combine(timeline, today, startDay, offset, visibleForecast) { timeline, today, startDay, offset, forecast ->
+        val state = if (timeline == null) {
             loadingState(today, startDay, offset)
         } else {
             homeState(timeline, today, startDay, offset).also {
                 if (offset == 0) saveSnapshot(it, timeline.isEmpty(), today, startDay)
-                loaded.value = true
+                if (!loaded.value) {
+                    loaded.value = true
+                    // 예측은 홈이 실제 데이터로 그려진 뒤에만 시작한다
+                    forecastManager.start()
+                }
             }
         }
+        state.withForecast(forecast, settings.dataVersion, today, startDay)
     }
         .flowOn(Dispatchers.Default)
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            loadingState(today.value, startDay.value, offset.value),
+            loadingState(today.value, startDay.value, offset.value)
+                .withForecast(forecastManager.forecast.value.takeIf { settings.showForecast }, settings.dataVersion, today.value, startDay.value),
         )
 
     fun showPrevious() {
@@ -84,6 +99,7 @@ class HomeViewModel(
     /** 앱을 켜둔 채 자정이 지났을 수 있으므로 화면에 돌아올 때마다 확인한다. */
     fun refreshToday() {
         today.value = clock()
+        forecastManager.refreshToday()
     }
 
     private fun loadingState(today: LocalDate, startDay: Int, offset: Int): HomeUiState =

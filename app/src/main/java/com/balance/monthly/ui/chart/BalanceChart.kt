@@ -34,6 +34,7 @@ import java.time.LocalDate
  * 한 기간의 그래프 데이터.
  * balances는 첫날부터 오늘(지난 기간이면 마지막 날)까지의 일별 잔고이고, 나머지 날은 여백으로 남는다.
  * firstIndex 앞은 첫 기록 이전이라 그리지 않는다. todayIndex가 null이면 지난 기간이다.
+ * forecast는 오늘(todayIndex)부터 기간 마지막 날까지의 예측 잔고이고, 없으면 그리지 않는다.
  */
 @Immutable
 class BalanceChartData(
@@ -43,9 +44,13 @@ class BalanceChartData(
     val markers: IntArray,
     val todayIndex: Int?,
     val firstIndex: Int = 0,
+    val forecast: LongArray? = null,
 ) {
     /** 실제로 선을 그리는 날들. */
     val drawnIndices: IntRange get() = firstIndex until balances.size
+
+    fun withForecast(forecast: LongArray?) =
+        BalanceChartData(start, dayCount, balances, markers, todayIndex, firstIndex, forecast)
 }
 
 @Composable
@@ -95,7 +100,8 @@ private fun DrawScope.drawChart(data: BalanceChartData, selected: Int?, colors: 
     val bottom = size.height - top
     val step = if (data.dayCount > 1) (right - left) / (data.dayCount - 1) else 0f
     val drawn = data.drawnIndices
-    val range = chartRange(data.balances.copyOfRange(drawn.first, drawn.last + 1))
+    // y축 범위는 예측까지 포함한다
+    val range = chartRange(data.balances.copyOfRange(drawn.first, drawn.last + 1) + (data.forecast ?: LongArray(0)))
 
     fun x(index: Int) = left + step * index
     fun y(value: Long): Float {
@@ -115,6 +121,17 @@ private fun DrawScope.drawChart(data: BalanceChartData, selected: Int?, colors: 
     }
 
     val balances = data.balances
+    val forecast = data.forecast
+    val todayIndex = data.todayIndex
+    if (forecast != null && todayIndex != null && forecast.size >= 2) {
+        val path = Path().apply {
+            moveTo(x(todayIndex), y(forecast[0]))
+            for (i in 1 until forecast.size) lineTo(x(todayIndex + i), y(forecast[i]))
+        }
+        val dash = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx()))
+        drawPath(path, colors.line.copy(alpha = 0.35f), style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, pathEffect = dash))
+    }
+
     if (drawn.count() >= 2) {
         val path = Path().apply {
             moveTo(x(drawn.first), y(balances[drawn.first]))

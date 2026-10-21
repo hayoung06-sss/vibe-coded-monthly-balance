@@ -1,5 +1,7 @@
 package com.balance.monthly.ui.home
 
+import com.balance.monthly.data.CachedForecast
+import com.balance.monthly.domain.FORECAST_ALGORITHM_VERSION
 import com.balance.monthly.domain.Ledger
 import com.balance.monthly.domain.Period
 import com.balance.monthly.domain.day
@@ -10,6 +12,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class HomeStateTest {
 
@@ -149,6 +152,44 @@ class HomeStateTest {
 
         assertNull(past.toSnapshot(1, today, 1))
         assertNull(empty.toSnapshot(1, today, 1))
+    }
+
+    private fun cachedForecast(dataVersion: Long = 3, on: LocalDate = today, startDay: Int = 1, size: Int = 12) =
+        CachedForecast(dataVersion, on, startDay, FORECAST_ALGORITHM_VERSION, LongArray(size) { 625_000L - it * 10_000 })
+
+    @Test
+    fun `캐시 키가 맞으면 오늘부터 기간 끝까지 예측선을 붙인다`() {
+        val state = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+
+        val withForecast = state.withForecast(cachedForecast(), dataVersion = 3, today, startDay = 1)
+
+        assertArrayEquals(cachedForecast().balances, withForecast.chart.forecast)
+    }
+
+    @Test
+    fun `키가 하나라도 다르면 예측선을 숨긴다`() {
+        val state = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+
+        // 기록이 바뀜
+        assertNull(state.withForecast(cachedForecast(dataVersion = 2), 3, today, 1).chart.forecast)
+        // 자정이 지남
+        assertNull(state.withForecast(cachedForecast(on = day("2026-10-19")), 3, today, 1).chart.forecast)
+        // 달 시작일이 바뀜
+        assertNull(state.withForecast(cachedForecast(startDay = 25), 3, today, 1).chart.forecast)
+        // 길이가 맞지 않음
+        assertNull(state.withForecast(cachedForecast(size = 5), 3, today, 1).chart.forecast)
+        assertNull(state.withForecast(null, 3, today, 1).chart.forecast)
+    }
+
+    @Test
+    fun `지난 기간과 빈 상태, 아직 선이 오늘까지 없을 때는 예측선이 없다`() {
+        val past = homeState(planExample().timeline(), today, startDay = 1, offset = -1)
+        val empty = homeState(emptyList(), today, startDay = 1, offset = 0)
+        val loading = homeState(null, today, startDay = 1, offset = 0)
+
+        assertNull(past.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
+        assertNull(empty.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
+        assertNull(loading.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
     }
 
     @Test

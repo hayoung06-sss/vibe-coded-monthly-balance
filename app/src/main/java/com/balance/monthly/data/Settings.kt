@@ -48,15 +48,20 @@ class Settings(private val prefs: SharedPreferences) {
             showForecastState.value = value
         }
 
+    private val dataVersionState = MutableStateFlow(prefs.getLong(KEY_DATA_VERSION, 0))
+
     /** 기록이 바뀔 때마다 1씩 증가. 캐시가 최신인지 판단하는 값이다. */
     val dataVersion: Long
-        get() = prefs.getLong(KEY_DATA_VERSION, 0)
+        get() = dataVersionState.value
+
+    val dataVersionFlow: StateFlow<Long> = dataVersionState.asStateFlow()
 
     /** EntryRepository의 쓰기 함수에서만 부른다. */
     @Synchronized
     internal fun incrementDataVersion(): Long {
         val next = dataVersion + 1
         prefs.edit().putLong(KEY_DATA_VERSION, next).apply()
+        dataVersionState.value = next
         return next
     }
 

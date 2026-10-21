@@ -84,6 +84,42 @@ class SnapshotStoreTest {
         assertFalse(File(folder.root, SnapshotStore.HOME_FILE + ".tmp").exists())
     }
 
+    private val forecast = CachedForecast(
+        dataVersion = 7,
+        computedOn = LocalDate.parse("2026-10-20"),
+        monthStartDay = 25,
+        algorithmVersion = 1,
+        balances = LongArray(31) { 1_000_000L - it * 12_345 },
+    )
+
+    @Test
+    fun `예측 캐시를 쓴 값 그대로 읽고 1KB 미만`() {
+        store.writeForecast(forecast)
+
+        assertEquals(forecast, store.readForecast())
+        assertTrue(File(folder.root, SnapshotStore.FORECAST_FILE).length() < 1024)
+    }
+
+    @Test
+    fun `손상된 예측 캐시는 지우고 null`() {
+        store.writeForecast(forecast)
+        val file = File(folder.root, SnapshotStore.FORECAST_FILE)
+        file.writeBytes(file.readBytes().copyOf(10))
+
+        assertNull(store.readForecast())
+        assertFalse(file.exists())
+    }
+
+    @Test
+    fun `두 캐시는 서로 영향을 주지 않는다`() {
+        store.writeHome(snapshot)
+        store.writeForecast(forecast)
+        store.clearForecast()
+
+        assertEquals(snapshot, store.readHome())
+        assertNull(store.readForecast())
+    }
+
     @Test
     fun `지우면 없는 것으로 취급`() {
         store.writeHome(snapshot)
