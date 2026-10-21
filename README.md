@@ -14,6 +14,17 @@ $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 .\gradlew.bat testDebugUnitTest
 ```
 
+### 릴리스 APK
+
+```powershell
+.\gradlew.bat assembleRelease
+# 결과: app\build\outputs\apk\release\app-release.apk
+```
+
+서명 정보는 루트의 `keystore.properties`(git에 올리지 않음)에서 읽고, 키는 `C:\Users\chick\.android-keys\monthly-balance.jks`에 있다. 이 두 파일을 잃으면 설치된 앱을 같은 앱으로 업데이트할 수 없으므로 함께 백업해 둔다. `keystore.properties`가 없으면 서명 없이 빌드된다.
+
+디버그 빌드가 설치된 기기에는 서명이 달라 릴리스 APK를 덮어 설치할 수 없다. 디버그 앱을 지운 뒤(기록도 지워진다) 설치한다.
+
 디버그 빌드에서 샘플 기록을 넣으려면 `adb shell am start -n com.balance.monthly/.debug.SeedSampleActivity`를 실행한다(기존 기록은 지워진다. `--ez clear true`를 붙이면 지우기만 한다).
 
 ## 시작 속도

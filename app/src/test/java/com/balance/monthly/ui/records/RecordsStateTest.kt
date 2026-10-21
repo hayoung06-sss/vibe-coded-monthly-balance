@@ -18,7 +18,7 @@ class RecordsStateTest {
         val state = recordsState(planExample().timeline(), today, startDay = 1, offset = 0)
 
         assertEquals(listOf(625_000L, 640_000L, 670_000L, 470_000L, 500_000L), state.items!!.map { it.balance })
-        assertEquals(day("2026-10-20"), state.items!!.first().entry.date)
+        assertEquals(day("2026-10-20"), state.items.first().entry.date)
     }
 
     @Test
