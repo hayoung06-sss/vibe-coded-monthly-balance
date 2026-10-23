@@ -6,10 +6,9 @@ Claude Code와 함께 바이브 코딩으로 만드는 안드로이드 월간 �
 
 ## 빌드
 
-Android Studio에서 열면 된다. 터미널에서 빌드할 때는 `JAVA_HOME`을 Android Studio의 JBR로 지정한다(GraalVM은 jlink 단계에서 실패한다).
+Android Studio에서 열면 된다. 터미널에서는 시스템 JDK(17 이상, JDK 25에서 확인)로 바로 빌드된다. GraalVM은 jlink 단계에서 실패하므로, GraalVM이 기본이면 `JAVA_HOME`을 Android Studio의 JBR(`C:\Program Files\Android\Android Studio\jbr`)로 지정한다.
 
 ```powershell
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
 .\gradlew.bat assembleDebug
 .\gradlew.bat testDebugUnitTest
 ```
