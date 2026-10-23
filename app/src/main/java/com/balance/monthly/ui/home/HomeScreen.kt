@@ -72,7 +72,8 @@ private fun HomeContent(
 
         Spacer(Modifier.height(16.dp))
         Text(
-            text = if (state.isCurrentPeriod) "현재 잔고" else "기간 끝 잔고",
+            // 지난 기간은 그 기간 마지막 날의 잔고. 위에 기간이 표시되므로 '잔고'로 충분하다.
+            text = if (state.isCurrentPeriod) "현재 잔고" else "잔고",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
