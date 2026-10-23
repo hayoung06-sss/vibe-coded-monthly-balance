@@ -11,6 +11,7 @@ import com.balance.monthly.domain.balanceAt
 import com.balance.monthly.domain.dailyBalances
 import com.balance.monthly.domain.periodAt
 import com.balance.monthly.domain.periodSummary
+import com.balance.monthly.domain.periodRemaining
 import com.balance.monthly.ui.chart.BalanceChartData
 import com.balance.monthly.ui.periodLabel
 import java.time.LocalDate
@@ -73,7 +74,10 @@ fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int
         canGoForward = !isCurrent,
         balance = if (isCurrent) balanceAt(timeline, today) else summary.endBalance,
         summary = summary,
-        chart = BalanceChartData(period.start, period.dayCount, balances, markers, todayIndex, firstIndex),
+        chart = BalanceChartData(
+            period.start, period.dayCount, balances, markers, todayIndex, firstIndex,
+            remaining = if (timeline.isEmpty()) null else periodRemaining(summary),
+        ),
         isEmpty = timeline.isEmpty(),
     )
 }
@@ -109,7 +113,10 @@ fun HomeSnapshot.toUiState(today: LocalDate, startDay: Int): HomeUiState? {
         canGoForward = false,
         balance = balance,
         summary = summary,
-        chart = BalanceChartData(period.start, period.dayCount, dailyBalances, markers, todayIndex, firstIndex),
+        chart = BalanceChartData(
+            period.start, period.dayCount, dailyBalances, markers, todayIndex, firstIndex,
+            remaining = periodRemaining(summary),
+        ),
         isEmpty = false,
     )
 }

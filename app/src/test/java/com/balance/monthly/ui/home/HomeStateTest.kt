@@ -4,6 +4,7 @@ import com.balance.monthly.data.CachedForecast
 import com.balance.monthly.domain.FORECAST_ALGORITHM_VERSION
 import com.balance.monthly.domain.Ledger
 import com.balance.monthly.domain.Period
+import com.balance.monthly.domain.PeriodRemaining
 import com.balance.monthly.domain.day
 import com.balance.monthly.domain.planExample
 import org.junit.Assert.assertArrayEquals
@@ -190,6 +191,45 @@ class HomeStateTest {
         assertNull(past.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
         assertNull(empty.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
         assertNull(loading.withForecast(cachedForecast(), 3, today, 1).chart.forecast)
+    }
+
+    @Test
+    fun `그래프에 이번 기간 잔량을 넘긴다`() {
+        val state = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+
+        assertEquals(PeriodRemaining(base = 700_000, balance = 625_000), state.chart.remaining)
+    }
+
+    @Test
+    fun `지난 기간 잔량은 기간 끝 잔고 기준`() {
+        val timeline = Ledger().apply {
+            balance("2026-08-20", 1_000_000)
+            expense("2026-09-15", 250_000)
+            expense("2026-10-05", 100_000)
+        }.timeline()
+
+        val state = homeState(timeline, today, startDay = 1, offset = -1)
+
+        val remaining = state.chart.remaining!!
+        assertEquals(75, remaining.percent)
+        assertEquals(remaining.balance, remaining.balanceAtPercent(75))
+    }
+
+    @Test
+    fun `빈 상태와 읽는 중에는 잔량이 없고 스냅샷에서는 복원된다`() {
+        assertNull(homeState(emptyList(), today, startDay = 1, offset = 0).chart.remaining)
+        assertNull(homeState(null, today, startDay = 1, offset = 0).chart.remaining)
+
+        val fresh = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+        val restored = fresh.toSnapshot(5, today, 1)!!.toUiState(today, 1)!!
+        assertEquals(fresh.chart.remaining, restored.chart.remaining)
+    }
+
+    @Test
+    fun `예측을 붙여도 잔량은 그대로`() {
+        val state = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+
+        assertEquals(state.chart.remaining, state.withForecast(cachedForecast(), 3, today, 1).chart.remaining)
     }
 
     @Test

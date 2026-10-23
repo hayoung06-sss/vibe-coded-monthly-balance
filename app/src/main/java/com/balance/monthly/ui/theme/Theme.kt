@@ -28,6 +28,8 @@ private val DarkColors = darkColorScheme(
     onSecondary = OnMint,
     secondaryContainer = Color(0xFF1F3D33),
     onSecondaryContainer = Mint,
+    // 그래프의 잔량 선
+    tertiary = Color(0xFFF5B54A),
     // 지출 표시에도 쓴다
     error = Color(0xFFFF8A80),
     background = WindowBackgroundDark,
@@ -49,6 +51,7 @@ private val LightColors = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFCFF3E6),
     onSecondaryContainer = OnMint,
+    tertiary = Color(0xFFB26A00),
     error = Color(0xFFC62828),
     background = WindowBackgroundLight,
     onBackground = Color(0xFF1C1C1C),

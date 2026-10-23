@@ -10,6 +10,7 @@ import com.balance.monthly.data.EntryRepository
 import com.balance.monthly.domain.EntryType
 import com.balance.monthly.domain.balanceAt
 import com.balance.monthly.domain.computeTimeline
+import com.balance.monthly.domain.periodOf
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,16 +21,23 @@ import kotlin.random.Random
  * 디버그·측정용 빌드 전용. 기존 기록을 모두 지우고 최근 약 75일치 샘플 기록을 넣은 뒤 홈을 연다.
  * `adb shell am start -n com.balance.monthly/.debug.SeedSampleActivity`
  * 기록만 지우려면 `--ez clear true`를 붙인다.
+ * `--es scenario half`를 붙이면 이번 기간 첫날 실제 잔고 1,000,000원, 오늘 지출 500,000원으로 잔량이 정확히 50%가 된다.
  */
 class SeedSampleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val clearOnly = intent.getBooleanExtra("clear", false)
-        val repository = (application as BalanceApp).repository
+        val scenario = intent.getStringExtra("scenario")
+        val app = application as BalanceApp
+        val repository = app.repository
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
                 repository.getAll().forEach { repository.delete(it.id) }
-                if (!clearOnly) seed(repository, LocalDate.now())
+                when {
+                    clearOnly -> Unit
+                    scenario == "half" -> seedHalf(repository, LocalDate.now(), app.settings.monthStartDay)
+                    else -> seed(repository, LocalDate.now())
+                }
             }
             startActivity(
                 Intent(this@SeedSampleActivity, MainActivity::class.java)
@@ -37,6 +45,11 @@ class SeedSampleActivity : ComponentActivity() {
             )
             finish()
         }
+    }
+
+    private suspend fun seedHalf(repository: EntryRepository, today: LocalDate, startDay: Int) {
+        repository.add(EntryType.BALANCE, 1_000_000, periodOf(today, startDay).start, "시작")
+        repository.add(EntryType.EXPENSE, 500_000, today, "절반")
     }
 
     private suspend fun seed(repository: EntryRepository, today: LocalDate) {
