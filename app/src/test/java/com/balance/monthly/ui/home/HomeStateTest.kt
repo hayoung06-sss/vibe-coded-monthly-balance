@@ -233,6 +233,19 @@ class HomeStateTest {
     }
 
     @Test
+    fun `그래프 선은 기록한 날 사이를 직선으로 잇고 스냅샷에서도 같다`() {
+        val fresh = homeState(planExample().timeline(), today, startDay = 1, offset = 0)
+
+        // 10/1 500,000 → 10/3 470,000 사이의 10/2
+        assertEquals(500_000L, fresh.chart.balances[1])
+        assertEquals(485_000L, fresh.chart.lineBalances[1])
+
+        val restored = fresh.toSnapshot(5, today, 1)!!.toUiState(today, 1)!!
+        assertArrayEquals(fresh.chart.lineBalances, restored.chart.lineBalances)
+        assertArrayEquals(fresh.chart.lineBalances, fresh.withForecast(cachedForecast(), 3, today, 1).chart.lineBalances)
+    }
+
+    @Test
     fun `달 시작일 25이면 날짜 범위 라벨`() {
         val state = homeState(planExample().timeline(), today, startDay = 25, offset = 0)
 

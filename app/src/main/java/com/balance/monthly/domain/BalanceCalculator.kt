@@ -95,6 +95,50 @@ fun dailyBalances(timeline: List<EntryWithBalance>, period: Period, today: Local
     return result
 }
 
+/**
+ * 그래프 선용 일별 잔고. 기록이 있는 날(오늘까지)의 잔고를 직선으로 이어, 기록 사이에 돈이 천천히 바뀐 것처럼 그린다.
+ * 기간 밖의 기록도 이어서 기간 경계에서 선이 끊기지 않는다. 마지막 기록 이후 오늘까지는 알 수 없으므로 수평이고,
+ * 첫 기록 이전은 0이다. 잔고·합계 계산에는 쓰지 않는다.
+ */
+fun interpolatedDailyBalances(timeline: List<EntryWithBalance>, period: Period, today: LocalDate): LongArray {
+    val firstDay = period.start.toEpochDay()
+    val lastDay = minOf(period.end, today).toEpochDay()
+    if (lastDay < firstDay) return LongArray(0)
+
+    // 기록한 날과 그날이 끝났을 때의 잔고
+    val anchorDays = ArrayList<Long>()
+    val anchorBalances = ArrayList<Long>()
+    for (item in timeline) {
+        val day = item.entry.date.toEpochDay()
+        if (day > today.toEpochDay()) break
+        if (anchorDays.lastOrNull() == day) {
+            anchorBalances[anchorBalances.lastIndex] = item.balance
+        } else {
+            anchorDays += day
+            anchorBalances += item.balance
+        }
+    }
+
+    val result = LongArray((lastDay - firstDay + 1).toInt())
+    var k = -1 // day 이전(같은 날 포함)의 마지막 기록
+    for (i in result.indices) {
+        val day = firstDay + i
+        while (k + 1 < anchorDays.size && anchorDays[k + 1] <= day) k++
+        result[i] = when {
+            k < 0 -> 0L
+            anchorDays[k] == day || k == anchorDays.lastIndex -> anchorBalances[k]
+            else -> {
+                val fromDay = anchorDays[k]
+                val toDay = anchorDays[k + 1]
+                val from = anchorBalances[k]
+                val to = anchorBalances[k + 1]
+                from + Math.round((to - from).toDouble() * (day - fromDay) / (toDay - fromDay))
+            }
+        }
+    }
+    return result
+}
+
 /** 기간 시작부터 오늘(기간이 이미 끝났으면 마지막 날)까지의 수입·지출·차액 합계. */
 fun periodSummary(timeline: List<EntryWithBalance>, period: Period, today: LocalDate): PeriodSummary {
     val startBalance = balanceAt(timeline, period.start.minusDays(1))

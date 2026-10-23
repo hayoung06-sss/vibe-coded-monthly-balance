@@ -18,6 +18,8 @@ class HomeSnapshot(
     val balance: Long,
     val period: Period,
     val dailyBalances: LongArray,
+    /** 그래프 선용 잔고(기록한 날 사이를 직선으로 이은 값) */
+    val lineBalances: LongArray,
     /** 첫 기록 이전이라 그리지 않는 날의 수 */
     val firstIndex: Int,
     /** 실제 잔고를 입력한 날의 기간 내 인덱스 */
@@ -31,13 +33,14 @@ class HomeSnapshot(
         balance == other.balance &&
         period == other.period &&
         dailyBalances.contentEquals(other.dailyBalances) &&
+        lineBalances.contentEquals(other.lineBalances) &&
         firstIndex == other.firstIndex &&
         markers.contentEquals(other.markers) &&
         summary == other.summary
 
     override fun hashCode(): Int = arrayOf<Any>(
         dataVersion, writtenOn, monthStartDay, balance, period,
-        dailyBalances.contentHashCode(), firstIndex, markers.contentHashCode(), summary,
+        dailyBalances.contentHashCode(), lineBalances.contentHashCode(), firstIndex, markers.contentHashCode(), summary,
     ).contentHashCode()
 }
 
@@ -79,6 +82,7 @@ class SnapshotStore(private val dir: File) {
         val balance = input.readLong()
         val period = Period(LocalDate.ofEpochDay(input.readLong()), LocalDate.ofEpochDay(input.readLong()))
         val daily = LongArray(input.readUnsignedShort()) { input.readLong() }
+        val line = LongArray(daily.size) { input.readLong() }
         val firstIndex = input.readUnsignedShort()
         val markers = IntArray(input.readUnsignedShort()) { input.readUnsignedShort() }
         val summary = PeriodSummary(
@@ -89,7 +93,7 @@ class SnapshotStore(private val dir: File) {
             diff = input.readLong(),
             opening = input.readLong(),
         )
-        HomeSnapshot(dataVersion, writtenOn, monthStartDay, balance, period, daily, firstIndex, markers, summary)
+        HomeSnapshot(dataVersion, writtenOn, monthStartDay, balance, period, daily, line, firstIndex, markers, summary)
     }
 
     fun writeHome(snapshot: HomeSnapshot) = write(homeFile) { out ->
@@ -102,6 +106,7 @@ class SnapshotStore(private val dir: File) {
         out.writeLong(snapshot.period.end.toEpochDay())
         out.writeShort(snapshot.dailyBalances.size)
         snapshot.dailyBalances.forEach(out::writeLong)
+        snapshot.lineBalances.forEach(out::writeLong)
         out.writeShort(snapshot.firstIndex)
         out.writeShort(snapshot.markers.size)
         snapshot.markers.forEach(out::writeShort)
@@ -166,7 +171,7 @@ class SnapshotStore(private val dir: File) {
     companion object {
         const val HOME_FILE = "home_snapshot.bin"
         const val FORECAST_FILE = "forecast.bin"
-        private const val HOME_FORMAT: Byte = 1
+        private const val HOME_FORMAT: Byte = 2
         private const val FORECAST_FORMAT: Byte = 1
     }
 }

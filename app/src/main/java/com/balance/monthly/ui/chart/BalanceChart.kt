@@ -46,6 +46,7 @@ import kotlin.math.abs
  * balances는 첫날부터 오늘(지난 기간이면 마지막 날)까지의 일별 잔고이고, 나머지 날은 여백으로 남는다.
  * firstIndex 앞은 첫 기록 이전이라 그리지 않는다. todayIndex가 null이면 지난 기간이다.
  * forecast는 오늘(todayIndex)부터 기간 마지막 날까지의 예측 잔고이고, 없으면 그리지 않는다.
+ * lineBalances는 선을 그리는 값으로, 기록한 날 사이를 직선으로 이은 잔고다(누르면 보이는 금액은 balances).
  * remaining이 있으면 잔량 75·50·25% 기준선과 현재 잔량 선분을 그린다.
  */
 @Immutable
@@ -58,12 +59,13 @@ class BalanceChartData(
     val firstIndex: Int = 0,
     val forecast: LongArray? = null,
     val remaining: PeriodRemaining? = null,
+    val lineBalances: LongArray = balances,
 ) {
     /** 실제로 선을 그리는 날들. */
     val drawnIndices: IntRange get() = firstIndex until balances.size
 
     fun withForecast(forecast: LongArray?) =
-        BalanceChartData(start, dayCount, balances, markers, todayIndex, firstIndex, forecast, remaining)
+        BalanceChartData(start, dayCount, balances, markers, todayIndex, firstIndex, forecast, remaining, lineBalances)
 }
 
 @Composable
@@ -135,7 +137,7 @@ private fun DrawScope.drawChart(
     val guides = remaining?.let { r -> REMAINING_GUIDE_PERCENTS.map { it to r.balanceAtPercent(it) } }.orEmpty()
     // y축 범위는 예측과 잔량 기준선까지 포함해 세 줄이 항상 보이게 한다
     val range = chartRange(
-        data.balances.copyOfRange(drawn.first, drawn.last + 1) +
+        data.lineBalances.copyOfRange(drawn.first, drawn.last + 1) +
             (data.forecast ?: LongArray(0)) +
             guides.map { it.second }.toLongArray(),
     )
@@ -163,7 +165,7 @@ private fun DrawScope.drawChart(
         emptyList()
     }
 
-    val balances = data.balances
+    val balances = data.lineBalances
     val forecast = data.forecast
     val todayIndex = data.todayIndex
     if (forecast != null && todayIndex != null && forecast.size >= 2) {

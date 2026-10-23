@@ -27,6 +27,7 @@ class SnapshotStoreTest {
         balance = -9_999_999_999_999,
         period = Period(LocalDate.parse("2026-09-30"), LocalDate.parse("2026-10-30")),
         dailyBalances = LongArray(31) { it * 1_000L - 5_000 },
+        lineBalances = LongArray(31) { it * 900L - 5_000 },
         firstIndex = 3,
         markers = intArrayOf(3, 14, 30),
         summary = PeriodSummary(1, 2, 3, 4, -5, 6),
@@ -76,7 +77,7 @@ class SnapshotStoreTest {
         store.writeHome(snapshot)
         val newer = HomeSnapshot(
             43, snapshot.writtenOn, 1, 0, Period(LocalDate.parse("2026-10-01"), LocalDate.parse("2026-10-31")),
-            LongArray(0), 0, IntArray(0), PeriodSummary(0, 0, 0, 0, 0, 0),
+            LongArray(0), LongArray(0), 0, IntArray(0), PeriodSummary(0, 0, 0, 0, 0, 0),
         )
         store.writeHome(newer)
 

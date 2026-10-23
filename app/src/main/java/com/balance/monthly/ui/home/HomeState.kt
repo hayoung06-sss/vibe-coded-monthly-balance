@@ -9,6 +9,7 @@ import com.balance.monthly.domain.Period
 import com.balance.monthly.domain.PeriodSummary
 import com.balance.monthly.domain.balanceAt
 import com.balance.monthly.domain.dailyBalances
+import com.balance.monthly.domain.interpolatedDailyBalances
 import com.balance.monthly.domain.periodAt
 import com.balance.monthly.domain.periodSummary
 import com.balance.monthly.domain.periodRemaining
@@ -77,6 +78,7 @@ fun homeState(timeline: List<EntryWithBalance>?, today: LocalDate, startDay: Int
         chart = BalanceChartData(
             period.start, period.dayCount, balances, markers, todayIndex, firstIndex,
             remaining = if (timeline.isEmpty()) null else periodRemaining(summary),
+            lineBalances = interpolatedDailyBalances(timeline, period, today),
         ),
         isEmpty = timeline.isEmpty(),
     )
@@ -92,6 +94,7 @@ fun HomeUiState.toSnapshot(dataVersion: Long, today: LocalDate, startDay: Int): 
         balance = balance,
         period = period,
         dailyBalances = chart.balances,
+        lineBalances = chart.lineBalances,
         firstIndex = chart.firstIndex,
         markers = chart.markers,
         summary = summary,
@@ -116,6 +119,7 @@ fun HomeSnapshot.toUiState(today: LocalDate, startDay: Int): HomeUiState? {
         chart = BalanceChartData(
             period.start, period.dayCount, dailyBalances, markers, todayIndex, firstIndex,
             remaining = periodRemaining(summary),
+            lineBalances = lineBalances,
         ),
         isEmpty = false,
     )
